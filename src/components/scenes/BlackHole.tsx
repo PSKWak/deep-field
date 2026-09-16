@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useMemo, useRef, useState } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { BlackHoleParams } from "@/lib/types";
 import GravityDemo from "./GravityDemo";
+import BlackHoleAnatomy from "./BlackHoleAnatomy";
 
 function diskColor(temp: number, falloff: number): THREE.Color {
   // falloff: 0 near horizon (hottest/whitest), 1 at outer edge (cooler)
@@ -16,6 +17,9 @@ function diskColor(temp: number, falloff: number): THREE.Color {
 export default function BlackHole({ params }: { params: BlackHoleParams }) {
   const diskRef = useRef<THREE.Points>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const { camera } = useThree();
+  const [showAnatomy, setShowAnatomy] = useState(false);
+  const anatomyVisibleRef = useRef(false);
 
   const particleCount = Math.round(200 * params.diskDensity + 400);
 
@@ -54,6 +58,19 @@ export default function BlackHole({ params }: { params: BlackHoleParams }) {
     }
     if (ringRef.current) {
       ringRef.current.rotation.z += delta * 0.15 * params.spinSpeed;
+    }
+
+    // Show the anatomy overlay once the camera is close enough to matter,
+    // with a little hysteresis so it doesn't flicker at the boundary.
+    const dist = camera.position.length();
+    const showAt = params.horizonSize * 6.5;
+    const hideAt = params.horizonSize * 8;
+    const shouldShow = anatomyVisibleRef.current
+      ? dist < hideAt
+      : dist < showAt;
+    if (shouldShow !== anatomyVisibleRef.current) {
+      anatomyVisibleRef.current = shouldShow;
+      setShowAnatomy(shouldShow);
     }
   });
 
@@ -101,6 +118,8 @@ export default function BlackHole({ params }: { params: BlackHoleParams }) {
         gravityStrength={params.gravityStrength}
         particleSpin={params.particleSpin}
       />
+
+      {showAnatomy && <BlackHoleAnatomy horizonSize={params.horizonSize} />}
     </group>
   );
 }
