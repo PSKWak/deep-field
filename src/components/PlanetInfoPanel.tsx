@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { PlanetData } from "@/lib/planets";
 import { getEarthDayLengthHours, getPlanetLocalTime } from "@/lib/planets";
 
-export default function PlanetInfoPanel({ planet }: { planet: PlanetData }) {
-  const [now, setNow] = useState<Date | null>(null);
+type PlanetInfoPanelProps = {
+  planet: PlanetData;
+  now: Date;
+  onDeselect: () => void;
+};
 
-  useEffect(() => {
-    setNow(new Date());
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, [planet.id]);
-
+export default function PlanetInfoPanel({
+  planet,
+  now,
+  onDeselect,
+}: PlanetInfoPanelProps) {
   const dayHours = getEarthDayLengthHours(planet);
   const years = (planet.orbitalPeriodDays / 365.25).toFixed(2);
 
@@ -20,9 +21,18 @@ export default function PlanetInfoPanel({ planet }: { planet: PlanetData }) {
     <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
       <div className="flex items-baseline justify-between">
         <h2 className="text-sm font-medium text-neutral-100">{planet.name}</h2>
-        <span className="font-mono text-lg text-indigo-300">
-          {now ? getPlanetLocalTime(planet, now) : "--:--"}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-lg text-indigo-300">
+            {getPlanetLocalTime(planet, now)}
+          </span>
+          <button
+            onClick={onDeselect}
+            aria-label="Deselect planet"
+            className="rounded-md border border-white/10 px-1.5 text-xs text-neutral-400 hover:bg-white/10 hover:text-neutral-200"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <p className="text-xs text-neutral-500">
         Approximate local time, derived from {planet.name}&apos;s real rotation

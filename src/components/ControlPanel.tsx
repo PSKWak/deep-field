@@ -19,7 +19,17 @@ type ControlPanelProps = {
   setBlackHoleParams: (p: BlackHoleParams) => void;
   planetsParams: PlanetsParams;
   setPlanetsParams: (p: PlanetsParams) => void;
+  simDate: Date;
+  onSetSimDate: (d: Date) => void;
+  onJumpToNow: () => void;
 };
+
+function toDatetimeLocalValue(d: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
 
 export default function ControlPanel({
   mode,
@@ -31,6 +41,9 @@ export default function ControlPanel({
   setBlackHoleParams,
   planetsParams,
   setPlanetsParams,
+  simDate,
+  onSetSimDate,
+  onJumpToNow,
 }: ControlPanelProps) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
@@ -128,6 +141,31 @@ export default function ControlPanel({
 
       {mode === "planets" && (
         <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-xs text-neutral-300">
+            <span className="flex justify-between">
+              <span>Jump to date</span>
+              <button
+                onClick={onJumpToNow}
+                className="text-indigo-400 hover:text-indigo-300"
+              >
+                Now
+              </button>
+            </span>
+            <input
+              type="datetime-local"
+              value={toDatetimeLocalValue(simDate)}
+              onChange={(e) => {
+                if (!e.target.value) return;
+                const d = new Date(e.target.value);
+                if (!Number.isNaN(d.getTime())) onSetSimDate(d);
+              }}
+              className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs text-neutral-200 [color-scheme:dark]"
+            />
+          </label>
+          <p className="text-xs text-neutral-500">
+            Orbital motion and rotation are real; the starting alignment is
+            illustrative, not precise ephemeris data.
+          </p>
           <Slider
             label="Simulation speed"
             value={planetsParams.timeScale}

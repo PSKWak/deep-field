@@ -29,6 +29,9 @@ export type PlanetData = {
   fact: string;
 };
 
+/** Reference epoch for the deterministic orbit/spin phase math below (J2000). */
+export const SIM_EPOCH_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
+
 // Real orbital + physical data (NASA planetary fact sheets).
 export const PLANETS: PlanetData[] = [
   {

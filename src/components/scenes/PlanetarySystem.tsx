@@ -1,23 +1,28 @@
 "use client";
 
 import { Suspense } from "react";
+import * as THREE from "three";
 import { PLANETS, sceneDistance, type PlanetData } from "@/lib/planets";
 import Sun from "./Sun";
 import Planet from "./Planet";
 import OrbitRing from "./OrbitRing";
 
 type PlanetarySystemProps = {
-  timeScale: number;
+  simTimeRef: React.RefObject<number>;
+  positions: Map<string, THREE.Vector3>;
   showOrbits: boolean;
   selectedPlanet: PlanetData | null;
   onSelect: (planet: PlanetData) => void;
+  onHover: (planet: PlanetData | null) => void;
 };
 
 export default function PlanetarySystem({
-  timeScale,
+  simTimeRef,
+  positions,
   showOrbits,
   selectedPlanet,
   onSelect,
+  onHover,
 }: PlanetarySystemProps) {
   return (
     <group>
@@ -35,9 +40,11 @@ export default function PlanetarySystem({
           <Planet
             planet={planet}
             startAngle={(i / PLANETS.length) * Math.PI * 2}
-            timeScale={timeScale}
+            simTimeRef={simTimeRef}
+            positions={positions}
             selected={selectedPlanet?.id === planet.id}
             onSelect={onSelect}
+            onHover={onHover}
           />
         </Suspense>
       ))}

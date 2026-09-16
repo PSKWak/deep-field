@@ -1,30 +1,33 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 import type { PlanetData } from "@/lib/planets";
-import { sceneDistance, sceneRadius } from "@/lib/planets";
+import { SIM_EPOCH_MS, sceneDistance, sceneRadius } from "@/lib/planets";
 
 type PlanetProps = {
   planet: PlanetData;
   startAngle: number;
-  timeScale: number;
+  simTimeRef: React.RefObject<number>;
+  positions: Map<string, THREE.Vector3>;
   selected: boolean;
   onSelect: (planet: PlanetData) => void;
+  onHover: (planet: PlanetData | null) => void;
 };
 
 export default function Planet({
   planet,
   startAngle,
-  timeScale,
+  simTimeRef,
+  positions,
   selected,
   onSelect,
+  onHover,
 }: PlanetProps) {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
-  const angleRef = useRef(startAngle);
 
   const texture = useLoader(THREE.TextureLoader, planet.texture);
   const cloudsTexture = useLoader(
@@ -41,30 +44,42 @@ export default function Planet({
   const tiltRad = (planet.axialTiltDeg * Math.PI) / 180;
   const spinDirection = planet.rotationPeriodHours < 0 ? -1 : 1;
 
-  // radians per simulated day; `timeScale` (simulated days per real second)
-  // is applied in the frame loop below.
-  const orbitSpeed = useMemo(
+  // radians per simulated day, anchored to SIM_EPOCH_MS so the whole scene
+  // is a deterministic function of "current simulated time" — jumping to a
+  // date or resuming playback both just move that one clock.
+  const orbitSpeedPerDay = useMemo(
     () => (2 * Math.PI) / planet.orbitalPeriodDays,
     [planet.orbitalPeriodDays]
   );
-  const spinSpeed = useMemo(
+  const spinSpeedPerDay = useMemo(
     () =>
       (spinDirection * (2 * Math.PI) * 24) /
       Math.abs(planet.rotationPeriodHours),
     [spinDirection, planet.rotationPeriodHours]
   );
 
+  useEffect(() => {
+    if (groupRef.current) {
+      positions.set(planet.id, groupRef.current.position);
+    }
+    return () => {
+      positions.delete(planet.id);
+    };
+  }, [planet.id, positions]);
+
   useFrame((_, delta) => {
-    angleRef.current += orbitSpeed * timeScale * delta;
+    const daysSinceEpoch = (simTimeRef.current - SIM_EPOCH_MS) / 86_400_000;
+    const angle = startAngle + orbitSpeedPerDay * daysSinceEpoch;
+
     if (groupRef.current) {
       groupRef.current.position.set(
-        Math.cos(angleRef.current) * distance,
+        Math.cos(angle) * distance,
         0,
-        Math.sin(angleRef.current) * distance
+        Math.sin(angle) * distance
       );
     }
     if (meshRef.current) {
-      meshRef.current.rotation.y += spinSpeed * timeScale * delta;
+      meshRef.current.rotation.y = spinSpeedPerDay * daysSinceEpoch;
     }
     if (cloudsRef.current) {
       cloudsRef.current.rotation.y += delta * 0.02;
@@ -78,6 +93,16 @@ export default function Planet({
         onClick={(e) => {
           e.stopPropagation();
           onSelect(planet);
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation();
+          onHover(planet);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation();
+          onHover(null);
+          document.body.style.cursor = "auto";
         }}
       >
         <sphereGeometry args={[radius, 48, 48]} />
