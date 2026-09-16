@@ -14,6 +14,7 @@ import CameraRig from "./scenes/CameraRig";
 import ControlPanel from "./ControlPanel";
 import ApodPanel from "./ApodPanel";
 import PlanetInfoPanel from "./PlanetInfoPanel";
+import BlackHoleAudio from "./BlackHoleAudio";
 import type {
   BlackHoleParams,
   GalaxiesParams,
@@ -227,6 +228,7 @@ export default function DeepField() {
               onDeselect={() => setSelectedPlanet(null)}
             />
           )}
+          {mode === "blackholes" && <BlackHoleAudio />}
           {mode !== "planets" && <ApodPanel />}
         </div>
       )}
