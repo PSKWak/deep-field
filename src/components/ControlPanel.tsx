@@ -1,6 +1,7 @@
 "use client";
 
 import Slider from "./Slider";
+import { BLACK_HOLE_TYPES, type BlackHoleTypeId } from "@/lib/blackHoleTypes";
 import type {
   BlackHoleParams,
   GalaxiesParams,
@@ -17,6 +18,8 @@ type ControlPanelProps = {
   setGalaxiesParams: (p: GalaxiesParams) => void;
   blackHoleParams: BlackHoleParams;
   setBlackHoleParams: (p: BlackHoleParams) => void;
+  blackHoleType: BlackHoleTypeId;
+  onSelectBlackHoleType: (id: BlackHoleTypeId) => void;
   planetsParams: PlanetsParams;
   setPlanetsParams: (p: PlanetsParams) => void;
   simDate: Date;
@@ -39,6 +42,8 @@ export default function ControlPanel({
   setGalaxiesParams,
   blackHoleParams,
   setBlackHoleParams,
+  blackHoleType,
+  onSelectBlackHoleType,
   planetsParams,
   setPlanetsParams,
   simDate,
@@ -200,6 +205,25 @@ export default function ControlPanel({
 
       {mode === "blackholes" && (
         <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-neutral-300">Black hole type</span>
+            <div className="grid grid-cols-2 gap-1">
+              {BLACK_HOLE_TYPES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => onSelectBlackHoleType(t.id)}
+                  className={`rounded-md px-2 py-1 text-xs transition-colors ${
+                    blackHoleType === t.id
+                      ? "bg-indigo-500 text-white"
+                      : "bg-white/5 text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <Slider
             label="Disk density"
             value={blackHoleParams.diskDensity}

@@ -15,6 +15,8 @@ import ControlPanel from "./ControlPanel";
 import ApodPanel from "./ApodPanel";
 import PlanetInfoPanel from "./PlanetInfoPanel";
 import BlackHoleAudio from "./BlackHoleAudio";
+import BlackHoleInfoPanel from "./BlackHoleInfoPanel";
+import BlackHoleImagePanel from "./BlackHoleImagePanel";
 import type {
   BlackHoleParams,
   GalaxiesParams,
@@ -23,6 +25,7 @@ import type {
   StarsParams,
 } from "@/lib/types";
 import type { PlanetData } from "@/lib/planets";
+import { BLACK_HOLE_TYPES, type BlackHoleTypeId } from "@/lib/blackHoleTypes";
 
 const MODES: { id: SceneMode; label: string }[] = [
   { id: "stars", label: "Stars" },
@@ -54,11 +57,16 @@ export default function DeepField() {
     spinSpeed: 0.6,
   });
 
+  const [blackHoleType, setBlackHoleType] =
+    useState<BlackHoleTypeId>("supermassive");
   const [blackHoleParams, setBlackHoleParams] = useState<BlackHoleParams>({
     diskDensity: 2,
-    diskTemp: 0.6,
+    diskTemp:
+      BLACK_HOLE_TYPES.find((t) => t.id === "supermassive")?.diskTemp ?? 0.6,
     spinSpeed: 1,
-    horizonSize: 1.2,
+    horizonSize:
+      BLACK_HOLE_TYPES.find((t) => t.id === "supermassive")?.horizonSize ??
+      1.2,
     gravityStrength: 1,
     particleSpin: 0.5,
   });
@@ -209,6 +217,18 @@ export default function DeepField() {
             setGalaxiesParams={setGalaxiesParams}
             blackHoleParams={blackHoleParams}
             setBlackHoleParams={setBlackHoleParams}
+            blackHoleType={blackHoleType}
+            onSelectBlackHoleType={(id) => {
+              setBlackHoleType(id);
+              const preset = BLACK_HOLE_TYPES.find((t) => t.id === id);
+              if (preset) {
+                setBlackHoleParams({
+                  ...blackHoleParams,
+                  horizonSize: preset.horizonSize,
+                  diskTemp: preset.diskTemp,
+                });
+              }
+            }}
             planetsParams={planetsParams}
             setPlanetsParams={setPlanetsParams}
             simDate={simDateDisplay}
@@ -228,6 +248,15 @@ export default function DeepField() {
               onDeselect={() => setSelectedPlanet(null)}
             />
           )}
+          {mode === "blackholes" && (
+            <BlackHoleInfoPanel
+              type={
+                BLACK_HOLE_TYPES.find((t) => t.id === blackHoleType) ??
+                BLACK_HOLE_TYPES[0]
+              }
+            />
+          )}
+          {mode === "blackholes" && <BlackHoleImagePanel type={blackHoleType} />}
           {mode === "blackholes" && <BlackHoleAudio />}
           {mode !== "planets" && <ApodPanel />}
         </div>
