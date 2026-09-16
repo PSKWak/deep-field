@@ -4,6 +4,7 @@ import Slider from "./Slider";
 import type {
   BlackHoleParams,
   GalaxiesParams,
+  PlanetsParams,
   SceneMode,
   StarsParams,
 } from "@/lib/types";
@@ -16,6 +17,8 @@ type ControlPanelProps = {
   setGalaxiesParams: (p: GalaxiesParams) => void;
   blackHoleParams: BlackHoleParams;
   setBlackHoleParams: (p: BlackHoleParams) => void;
+  planetsParams: PlanetsParams;
+  setPlanetsParams: (p: PlanetsParams) => void;
 };
 
 export default function ControlPanel({
@@ -26,6 +29,8 @@ export default function ControlPanel({
   setGalaxiesParams,
   blackHoleParams,
   setBlackHoleParams,
+  planetsParams,
+  setPlanetsParams,
 }: ControlPanelProps) {
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
@@ -118,6 +123,40 @@ export default function ControlPanel({
               setGalaxiesParams({ ...galaxiesParams, spinSpeed: v })
             }
           />
+        </div>
+      )}
+
+      {mode === "planets" && (
+        <div className="flex flex-col gap-3">
+          <Slider
+            label="Simulation speed"
+            value={planetsParams.timeScale}
+            min={0}
+            max={200}
+            step={1}
+            formatValue={(v) => `${Math.round(v)} days/sec`}
+            onChange={(v) =>
+              setPlanetsParams({ ...planetsParams, timeScale: v })
+            }
+          />
+          <label className="flex items-center justify-between text-xs text-neutral-300">
+            <span>Show orbit paths</span>
+            <input
+              type="checkbox"
+              checked={planetsParams.showOrbits === 1}
+              onChange={(e) =>
+                setPlanetsParams({
+                  ...planetsParams,
+                  showOrbits: e.target.checked ? 1 : 0,
+                })
+              }
+              className="accent-indigo-400"
+            />
+          </label>
+          <p className="text-xs text-neutral-500">
+            Distances and sizes are compressed to fit the screen — orbital
+            speeds, rotation, and day/year lengths are real.
+          </p>
         </div>
       )}
 

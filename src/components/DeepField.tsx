@@ -6,24 +6,32 @@ import { OrbitControls, Stars } from "@react-three/drei";
 import StarField from "./scenes/StarField";
 import GalaxyField from "./scenes/GalaxyField";
 import BlackHole from "./scenes/BlackHole";
+import PlanetarySystem from "./scenes/PlanetarySystem";
 import ControlPanel from "./ControlPanel";
 import ApodPanel from "./ApodPanel";
+import PlanetInfoPanel from "./PlanetInfoPanel";
 import type {
   BlackHoleParams,
   GalaxiesParams,
+  PlanetsParams,
   SceneMode,
   StarsParams,
 } from "@/lib/types";
+import type { PlanetData } from "@/lib/planets";
 
 const MODES: { id: SceneMode; label: string }[] = [
   { id: "stars", label: "Stars" },
   { id: "galaxies", label: "Galaxies" },
+  { id: "planets", label: "Planets" },
   { id: "blackholes", label: "Black Holes" },
 ];
 
 export default function DeepField() {
   const [mode, setMode] = useState<SceneMode>("stars");
   const [panelOpen, setPanelOpen] = useState(true);
+  const [selectedPlanet, setSelectedPlanet] = useState<PlanetData | null>(
+    null
+  );
 
   const [starsParams, setStarsParams] = useState<StarsParams>({
     count: 3000,
@@ -46,23 +54,40 @@ export default function DeepField() {
     horizonSize: 1.2,
   });
 
+  const [planetsParams, setPlanetsParams] = useState<PlanetsParams>({
+    timeScale: 20,
+    showOrbits: 1,
+  });
+
   return (
     <div className="relative h-screen w-full overflow-hidden bg-black">
-      <Canvas camera={{ position: [0, 3, 14], fov: 55 }}>
+      <Canvas camera={{ position: [0, 14, 45], fov: 55 }}>
         <color attach="background" args={["#020204"]} />
-        <ambientLight intensity={0.2} />
-        <Stars radius={80} depth={40} count={1500} factor={3} fade />
+        <ambientLight intensity={mode === "planets" ? 0.35 : 0.2} />
+        <Stars radius={120} depth={60} count={1500} factor={3} fade />
 
         {mode === "stars" && <StarField params={starsParams} />}
         {mode === "galaxies" && <GalaxyField params={galaxiesParams} />}
         {mode === "blackholes" && <BlackHole params={blackHoleParams} />}
+        {mode === "planets" && (
+          <PlanetarySystem
+            timeScale={planetsParams.timeScale}
+            showOrbits={planetsParams.showOrbits === 1}
+            selectedPlanet={selectedPlanet}
+            onSelect={(p) => {
+              setSelectedPlanet(p);
+              setPanelOpen(true);
+            }}
+          />
+        )}
 
         <OrbitControls
-          enablePan={false}
-          minDistance={3}
-          maxDistance={40}
-          autoRotate
+          enablePan={mode === "planets"}
+          minDistance={mode === "planets" ? 1.5 : 3}
+          maxDistance={mode === "planets" ? 220 : 40}
+          autoRotate={mode !== "planets"}
           autoRotateSpeed={0.3}
+          zoomSpeed={2.2}
         />
       </Canvas>
 
@@ -73,7 +98,9 @@ export default function DeepField() {
             Deep Field
           </h1>
           <p className="text-xs text-neutral-500">
-            Interactive 3D explorer — drag to orbit, scroll to zoom
+            {mode === "planets"
+              ? "Click a planet to inspect it — drag to orbit, scroll to zoom"
+              : "Interactive 3D explorer — drag to orbit, scroll to zoom"}
           </p>
         </div>
 
@@ -115,8 +142,13 @@ export default function DeepField() {
             setGalaxiesParams={setGalaxiesParams}
             blackHoleParams={blackHoleParams}
             setBlackHoleParams={setBlackHoleParams}
+            planetsParams={planetsParams}
+            setPlanetsParams={setPlanetsParams}
           />
-          <ApodPanel />
+          {mode === "planets" && selectedPlanet && (
+            <PlanetInfoPanel planet={selectedPlanet} />
+          )}
+          {mode !== "planets" && <ApodPanel />}
         </div>
       )}
     </div>

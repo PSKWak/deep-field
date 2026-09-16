@@ -1,4 +1,4 @@
-export type SceneMode = "stars" | "galaxies" | "blackholes";
+export type SceneMode = "stars" | "galaxies" | "blackholes" | "planets";
 
 export type StarsParams = {
   count: number;
@@ -19,4 +19,10 @@ export type BlackHoleParams = {
   diskTemp: number; // 0 = cool/blue-white, 1 = hot orange
   spinSpeed: number;
   horizonSize: number;
+};
+
+export type PlanetsParams = {
+  /** simulated days that pass per real second */
+  timeScale: number;
+  showOrbits: 0 | 1;
 };
