@@ -241,6 +241,40 @@ export default function ControlPanel({
               setBlackHoleParams({ ...blackHoleParams, horizonSize: v })
             }
           />
+
+          <div className="mt-1 border-t border-white/10 pt-3">
+            <p className="mb-2 text-xs font-medium text-neutral-300">
+              Gravity demo
+            </p>
+            <p className="mb-2 text-xs text-neutral-500">
+              Click near the disk to drop a test particle and watch gravity
+              pull it in — close drops spaghettify, distant ones can orbit or
+              escape.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Slider
+                label="Gravity strength"
+                value={blackHoleParams.gravityStrength}
+                min={0.2}
+                max={3}
+                step={0.1}
+                onChange={(v) =>
+                  setBlackHoleParams({ ...blackHoleParams, gravityStrength: v })
+                }
+              />
+              <Slider
+                label="Particle initial spin"
+                value={blackHoleParams.particleSpin}
+                min={0}
+                max={1.5}
+                step={0.05}
+                formatValue={(v) => (v === 0 ? "straight fall" : v.toFixed(2))}
+                onChange={(v) =>
+                  setBlackHoleParams({ ...blackHoleParams, particleSpin: v })
+                }
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

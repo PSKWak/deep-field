@@ -19,6 +19,11 @@ export type BlackHoleParams = {
   diskTemp: number; // 0 = cool/blue-white, 1 = hot orange
   spinSpeed: number;
   horizonSize: number;
+  /** multiplier on the gravity demo's pull strength */
+  gravityStrength: number;
+  /** initial tangential speed of dropped test particles, as a fraction of
+   * local circular-orbit speed (0 = straight infall) */
+  particleSpin: number;
 };
 
 export type PlanetsParams = {

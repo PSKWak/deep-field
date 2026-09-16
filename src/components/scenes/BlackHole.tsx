@@ -4,6 +4,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { BlackHoleParams } from "@/lib/types";
+import GravityDemo from "./GravityDemo";
 
 function diskColor(temp: number, falloff: number): THREE.Color {
   // falloff: 0 near horizon (hottest/whitest), 1 at outer edge (cooler)
@@ -94,6 +95,12 @@ export default function BlackHole({ params }: { params: BlackHoleParams }) {
           depthWrite={false}
         />
       </points>
+
+      <GravityDemo
+        horizonSize={params.horizonSize}
+        gravityStrength={params.gravityStrength}
+        particleSpin={params.particleSpin}
+      />
     </group>
   );
 }

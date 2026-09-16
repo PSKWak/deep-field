@@ -58,6 +58,8 @@ export default function DeepField() {
     diskTemp: 0.6,
     spinSpeed: 1,
     horizonSize: 1.2,
+    gravityStrength: 1,
+    particleSpin: 0.5,
   });
 
   const [planetsParams, setPlanetsParams] = useState<PlanetsParams>({
@@ -137,7 +139,7 @@ export default function DeepField() {
           enablePan={mode === "planets"}
           minDistance={mode === "planets" ? 1.5 : 3}
           maxDistance={mode === "planets" ? 220 : 40}
-          autoRotate={mode !== "planets"}
+          autoRotate={mode === "stars" || mode === "galaxies"}
           autoRotateSpeed={0.3}
           zoomSpeed={2.2}
         />
@@ -162,6 +164,8 @@ export default function DeepField() {
           <p className="text-xs text-neutral-500">
             {mode === "planets"
               ? "Click a planet to fly to it — drag to orbit, scroll to zoom"
+              : mode === "blackholes"
+              ? "Click near the disk to drop a test particle — drag to orbit, scroll to zoom"
               : "Interactive 3D explorer — drag to orbit, scroll to zoom"}
           </p>
         </div>
