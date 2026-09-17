@@ -1,6 +1,7 @@
 import {
   callGroqChat,
   GroqNotConfiguredError,
+  GroqRequestError,
   type ChatMessage,
 } from "@/lib/groq";
 import { buildSystemPrompt, type SceneContext } from "@/lib/sceneContext";
@@ -53,6 +54,37 @@ export async function POST(request: Request) {
       );
     }
     console.error("Chat request failed:", err);
+
+    // Say what actually broke. A single opaque "try again" left a dead
+    // model looking identical to a rate limit, with no way to tell them
+    // apart from the browser.
+    if (err instanceof GroqRequestError) {
+      if (err.status === 401 || err.status === 403) {
+        return Response.json(
+          {
+            error:
+              "Groq rejected the API key. Check GROQ_API_KEY is current and, if you just changed it, redeploy so the new value is picked up.",
+          },
+          { status: 502 }
+        );
+      }
+      if (err.status === 429) {
+        return Response.json(
+          {
+            error:
+              "Groq's free-tier rate limit is hit. Wait a moment and ask again.",
+          },
+          { status: 429 }
+        );
+      }
+      return Response.json(
+        {
+          error: `The AI guide couldn't answer: ${err.detail} (model ${err.model}). Models get retired periodically — see console.groq.com/docs/models and set GROQ_MODEL to a current one.`,
+        },
+        { status: 502 }
+      );
+    }
+
     return Response.json(
       { error: "The AI guide couldn't answer right now. Try again." },
       { status: 502 }

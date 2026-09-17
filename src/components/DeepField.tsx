@@ -15,13 +15,13 @@ import CameraRig from "./scenes/CameraRig";
 import ControlPanel from "./ControlPanel";
 import ApodPanel from "./ApodPanel";
 import PlanetInfoPanel from "./PlanetInfoPanel";
-import BlackHoleAudio from "./BlackHoleAudio";
 import BlackHoleInfoPanel from "./BlackHoleInfoPanel";
 import BlackHoleImagePanel from "./BlackHoleImagePanel";
 import ChatPanel from "./ChatPanel";
 import LearnPanel, { type LearnTab } from "./LearnPanel";
 import ModeHint from "./ModeHint";
 import ShareButton from "./ShareButton";
+import BlackHoleSoundButton from "./BlackHoleSoundButton";
 import { decodeState, encodeState } from "@/lib/shareState";
 import type { SceneContext } from "@/lib/sceneContext";
 import type {
@@ -272,6 +272,9 @@ export default function DeepField() {
         </div>
 
         <div className="pointer-events-auto flex shrink-0 items-center gap-2">
+          {mode === "blackholes" && (
+            <BlackHoleSoundButton active={mode === "blackholes"} />
+          )}
           {mode !== "learn" && <ShareButton hash={shareHash} />}
           <ModeHint mode={mode} open={hintOpen} onOpenChange={setHintOpen} />
           {mode !== "learn" && (
@@ -397,7 +400,6 @@ export default function DeepField() {
                     }
                   />
                   <BlackHoleImagePanel type={blackHoleType} />
-                  <BlackHoleAudio />
                 </>
               )}
               {mode !== "planets" && <ApodPanel />}
