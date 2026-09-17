@@ -17,6 +17,9 @@ import PlanetInfoPanel from "./PlanetInfoPanel";
 import BlackHoleAudio from "./BlackHoleAudio";
 import BlackHoleInfoPanel from "./BlackHoleInfoPanel";
 import BlackHoleImagePanel from "./BlackHoleImagePanel";
+import ChatPanel from "./ChatPanel";
+import LearnPanel from "./LearnPanel";
+import type { SceneContext } from "@/lib/sceneContext";
 import type {
   BlackHoleParams,
   GalaxiesParams,
@@ -32,11 +35,13 @@ const MODES: { id: SceneMode; label: string }[] = [
   { id: "galaxies", label: "Galaxies" },
   { id: "planets", label: "Planets" },
   { id: "blackholes", label: "Black Holes" },
+  { id: "learn", label: "Learn" },
 ];
 
 export default function DeepField() {
   const [mode, setMode] = useState<SceneMode>("stars");
   const [panelOpen, setPanelOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetData | null>(
     null
   );
@@ -100,6 +105,23 @@ export default function DeepField() {
     }
   }, [mode]);
 
+  // What the AI guide is told about the current scene. Rebuilt on every change
+  // so an answer always reflects the sliders as they stand right now.
+  const sceneContext: SceneContext = {
+    mode,
+    ...(mode === "stars" && { stars: starsParams }),
+    ...(mode === "galaxies" && { galaxies: galaxiesParams }),
+    ...(mode === "blackholes" && {
+      blackHole: blackHoleParams,
+      blackHoleType,
+    }),
+    ...(mode === "planets" && {
+      planets: planetsParams,
+      selectedPlanetName: selectedPlanet?.name,
+      simDateIso: simDateDisplay.toISOString().slice(0, 16).replace("T", " "),
+    }),
+  };
+
   return (
     <div
       className="relative h-screen w-full overflow-hidden bg-black"
@@ -148,7 +170,9 @@ export default function DeepField() {
           enablePan={mode === "planets"}
           minDistance={mode === "planets" ? 1.5 : 3}
           maxDistance={mode === "planets" ? 220 : 40}
-          autoRotate={mode === "stars" || mode === "galaxies"}
+          autoRotate={
+            mode === "stars" || mode === "galaxies" || mode === "learn"
+          }
           autoRotateSpeed={0.3}
           zoomSpeed={2.2}
         />
@@ -175,6 +199,8 @@ export default function DeepField() {
               ? "Click a planet to fly to it — drag to orbit, scroll to zoom"
               : mode === "blackholes"
               ? "Click near the disk to drop a test particle — drag to orbit, scroll to zoom"
+              : mode === "learn"
+              ? "Hunt for real exoplanets, or rebuild the sky from any date and place"
               : "Interactive 3D explorer — drag to orbit, scroll to zoom"}
           </p>
         </div>
@@ -208,59 +234,89 @@ export default function DeepField() {
 
       {/* side panel */}
       {panelOpen && (
-        <div className="pointer-events-auto absolute right-4 top-20 flex w-72 max-w-[85vw] flex-col gap-4 max-h-[75vh] overflow-y-auto">
-          <ControlPanel
-            mode={mode}
-            starsParams={starsParams}
-            setStarsParams={setStarsParams}
-            galaxiesParams={galaxiesParams}
-            setGalaxiesParams={setGalaxiesParams}
-            blackHoleParams={blackHoleParams}
-            setBlackHoleParams={setBlackHoleParams}
-            blackHoleType={blackHoleType}
-            onSelectBlackHoleType={(id) => {
-              setBlackHoleType(id);
-              const preset = BLACK_HOLE_TYPES.find((t) => t.id === id);
-              if (preset) {
-                setBlackHoleParams({
-                  ...blackHoleParams,
-                  horizonSize: preset.horizonSize,
-                  diskTemp: preset.diskTemp,
-                });
-              }
-            }}
-            planetsParams={planetsParams}
-            setPlanetsParams={setPlanetsParams}
-            simDate={simDateDisplay}
-            onSetSimDate={(d) => {
-              simTimeRef.current = d.getTime();
-              setSimDateDisplay(d);
-            }}
-            onJumpToNow={() => {
-              simTimeRef.current = Date.now();
-              setSimDateDisplay(new Date());
-            }}
-          />
-          {mode === "planets" && selectedPlanet && (
-            <PlanetInfoPanel
-              planet={selectedPlanet}
-              now={simDateDisplay}
-              onDeselect={() => setSelectedPlanet(null)}
-            />
+        <div
+          className={`pointer-events-auto absolute right-4 top-20 flex max-w-[92vw] flex-col gap-4 overflow-y-auto ${
+            mode === "learn"
+              ? "w-[34rem] max-h-[calc(100vh-7rem)]"
+              : "w-72 max-h-[75vh]"
+          }`}
+        >
+          {mode === "learn" ? (
+            <LearnPanel onOpenChat={() => setChatOpen(true)} />
+          ) : (
+            <>
+              <ControlPanel
+                mode={mode}
+                starsParams={starsParams}
+                setStarsParams={setStarsParams}
+                galaxiesParams={galaxiesParams}
+                setGalaxiesParams={setGalaxiesParams}
+                blackHoleParams={blackHoleParams}
+                setBlackHoleParams={setBlackHoleParams}
+                blackHoleType={blackHoleType}
+                onSelectBlackHoleType={(id) => {
+                  setBlackHoleType(id);
+                  const preset = BLACK_HOLE_TYPES.find((t) => t.id === id);
+                  if (preset) {
+                    setBlackHoleParams({
+                      ...blackHoleParams,
+                      horizonSize: preset.horizonSize,
+                      diskTemp: preset.diskTemp,
+                    });
+                  }
+                }}
+                planetsParams={planetsParams}
+                setPlanetsParams={setPlanetsParams}
+                simDate={simDateDisplay}
+                onSetSimDate={(d) => {
+                  simTimeRef.current = d.getTime();
+                  setSimDateDisplay(d);
+                }}
+                onJumpToNow={() => {
+                  simTimeRef.current = Date.now();
+                  setSimDateDisplay(new Date());
+                }}
+              />
+              {mode === "planets" && selectedPlanet && (
+                <PlanetInfoPanel
+                  planet={selectedPlanet}
+                  now={simDateDisplay}
+                  onDeselect={() => setSelectedPlanet(null)}
+                />
+              )}
+              {mode === "blackholes" && (
+                <>
+                  <BlackHoleInfoPanel
+                    type={
+                      BLACK_HOLE_TYPES.find((t) => t.id === blackHoleType) ??
+                      BLACK_HOLE_TYPES[0]
+                    }
+                  />
+                  <BlackHoleImagePanel type={blackHoleType} />
+                  <BlackHoleAudio />
+                </>
+              )}
+              {mode !== "planets" && <ApodPanel />}
+            </>
           )}
-          {mode === "blackholes" && (
-            <BlackHoleInfoPanel
-              type={
-                BLACK_HOLE_TYPES.find((t) => t.id === blackHoleType) ??
-                BLACK_HOLE_TYPES[0]
-              }
-            />
-          )}
-          {mode === "blackholes" && <BlackHoleImagePanel type={blackHoleType} />}
-          {mode === "blackholes" && <BlackHoleAudio />}
-          {mode !== "planets" && <ApodPanel />}
         </div>
       )}
+
+      {/* AI guide — available in every mode, grounded in the current scene */}
+      <div className="absolute bottom-4 left-4 flex flex-col items-start gap-2">
+        {chatOpen && (
+          <ChatPanel
+            context={sceneContext}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
+        <button
+          onClick={() => setChatOpen((v) => !v)}
+          className="rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs text-neutral-300 backdrop-blur-md hover:bg-black/70"
+        >
+          {chatOpen ? "Hide guide" : "Ask the guide"}
+        </button>
+      </div>
     </div>
   );
 }

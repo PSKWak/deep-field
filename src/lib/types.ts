@@ -1,4 +1,9 @@
-export type SceneMode = "stars" | "galaxies" | "blackholes" | "planets";
+export type SceneMode =
+  | "stars"
+  | "galaxies"
+  | "blackholes"
+  | "planets"
+  | "learn";
 
 export type StarsParams = {
   count: number;
