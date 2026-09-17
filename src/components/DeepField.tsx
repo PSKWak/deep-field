@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useIsNarrow } from "@/lib/useMediaQuery";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
 import * as THREE from "three";
@@ -18,7 +19,10 @@ import BlackHoleAudio from "./BlackHoleAudio";
 import BlackHoleInfoPanel from "./BlackHoleInfoPanel";
 import BlackHoleImagePanel from "./BlackHoleImagePanel";
 import ChatPanel from "./ChatPanel";
-import LearnPanel from "./LearnPanel";
+import LearnPanel, { type LearnTab } from "./LearnPanel";
+import ModeHint from "./ModeHint";
+import ShareButton from "./ShareButton";
+import { decodeState, encodeState } from "@/lib/shareState";
 import type { SceneContext } from "@/lib/sceneContext";
 import type {
   BlackHoleParams,
@@ -27,7 +31,7 @@ import type {
   SceneMode,
   StarsParams,
 } from "@/lib/types";
-import type { PlanetData } from "@/lib/planets";
+import { PLANETS, type PlanetData } from "@/lib/planets";
 import { BLACK_HOLE_TYPES, type BlackHoleTypeId } from "@/lib/blackHoleTypes";
 
 const MODES: { id: SceneMode; label: string }[] = [
@@ -40,8 +44,30 @@ const MODES: { id: SceneMode; label: string }[] = [
 
 export default function DeepField() {
   const [mode, setMode] = useState<SceneMode>("stars");
-  const [panelOpen, setPanelOpen] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const [learnTab, setLearnTab] = useState<LearnTab>("exoplanets");
+  const [hintOpen, setHintOpen] = useState(true);
+  const seenModesRef = useRef(new Set<SceneMode>(["stars"]));
+
+  // A control panel that wide covers most of a phone screen, so it starts
+  // collapsed there. `null` means the user hasn't chosen, so follow the
+  // viewport; once they toggle it, their choice wins at any size.
+  const isNarrow = useIsNarrow();
+  const [panelOverride, setPanelOverride] = useState<boolean | null>(null);
+  const panelOpen = panelOverride ?? !isNarrow;
+  const setPanelOpen = (v: boolean) => setPanelOverride(v);
+
+  function changeMode(next: SceneMode) {
+    setMode(next);
+    // Show the hint the first time each mode is opened, then stay out of
+    // the way. Done here rather than in an effect inside ModeHint.
+    if (!seenModesRef.current.has(next)) {
+      seenModesRef.current.add(next);
+      setHintOpen(true);
+    } else {
+      setHintOpen(false);
+    }
+  }
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetData | null>(
     null
   );
@@ -104,6 +130,46 @@ export default function DeepField() {
       document.body.style.cursor = "auto";
     }
   }, [mode]);
+
+  // Restore a shared view once on mount. Runs before the user can touch
+  // anything, so it never clobbers in-progress edits.
+  useEffect(() => {
+    if (!window.location.hash) return;
+    const restored = decodeState(window.location.hash, {
+      mode,
+      stars: starsParams,
+      galaxies: galaxiesParams,
+      blackHole: blackHoleParams,
+      blackHoleType,
+      planets: planetsParams,
+      simTime: simTimeRef.current,
+    });
+    setMode(restored.mode);
+    setStarsParams(restored.stars);
+    setGalaxiesParams(restored.galaxies);
+    setBlackHoleParams(restored.blackHole);
+    setBlackHoleType(restored.blackHoleType);
+    setPlanetsParams(restored.planets);
+    simTimeRef.current = restored.simTime;
+    setSimDateDisplay(new Date(restored.simTime));
+    if (restored.selectedPlanetId) {
+      const planet = PLANETS.find((p) => p.id === restored.selectedPlanetId);
+      if (planet) setSelectedPlanet(planet);
+    }
+    // Mount-only: re-running would fight the user's own changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const shareHash = encodeState({
+    mode,
+    stars: starsParams,
+    galaxies: galaxiesParams,
+    blackHole: blackHoleParams,
+    blackHoleType,
+    planets: planetsParams,
+    simTime: simDateDisplay.getTime(),
+    selectedPlanetId: selectedPlanet?.id,
+  });
 
   // What the AI guide is told about the current scene. Rebuilt on every change
   // so an answer always reflects the sliders as they stand right now.
@@ -189,12 +255,12 @@ export default function DeepField() {
       )}
 
       {/* top bar */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex items-start justify-between gap-3 p-4">
         <div className="pointer-events-auto flex flex-col gap-1">
           <h1 className="text-lg font-semibold tracking-tight text-white">
             Deep Field
           </h1>
-          <p className="text-xs text-neutral-500">
+          <p className="hidden max-w-[60vw] text-xs text-neutral-500 sm:block">
             {mode === "planets"
               ? "Click a planet to fly to it — drag to orbit, scroll to zoom"
               : mode === "blackholes"
@@ -205,22 +271,50 @@ export default function DeepField() {
           </p>
         </div>
 
-        <button
-          onClick={() => setPanelOpen((v) => !v)}
-          className="pointer-events-auto rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-neutral-300 backdrop-blur-md hover:bg-black/60"
-        >
-          {panelOpen ? "Hide panel" : "Show panel"}
-        </button>
+        <div className="pointer-events-auto flex shrink-0 items-center gap-2">
+          {mode !== "learn" && <ShareButton hash={shareHash} />}
+          <ModeHint mode={mode} open={hintOpen} onOpenChange={setHintOpen} />
+          {mode !== "learn" && (
+            <button
+              onClick={() => setPanelOpen(!panelOpen)}
+              className="rounded-lg border border-white/10 bg-black/40 px-3 py-1.5 text-xs text-neutral-300 backdrop-blur-md hover:bg-black/60"
+            >
+              {panelOpen ? "Hide panel" : "Show panel"}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* mode tabs */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center">
-        <div className="pointer-events-auto flex gap-1 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-md">
+      {/* Stars mode invitation into the birth-sky chart */}
+      {mode === "stars" && (
+        <div className="pointer-events-none absolute inset-x-0 top-20 z-30 flex justify-center px-4 sm:top-24">
+          <button
+            onClick={() => {
+              setLearnTab("sky");
+              changeMode("learn");
+            }}
+            className="pointer-events-auto group max-w-full rounded-2xl border border-white/10 bg-black/50 px-5 py-3 text-center backdrop-blur-md transition-colors hover:border-indigo-400/40 hover:bg-black/70"
+          >
+            <span className="block text-sm font-medium text-neutral-100">
+              What the Universe looked like when a star like you was born
+            </span>
+            <span className="mt-0.5 block text-xs text-neutral-500 group-hover:text-indigo-300">
+              Enter your birth date and city to see the real sky — and save it
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Mode tabs. z-50 and its own backdrop: every panel is constrained to
+          sit above this strip, but the z-index guarantees the way out of a
+          mode stays clickable even if something else grows unexpectedly. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-50 flex justify-center pb-3 pt-6">
+        <div className="pointer-events-auto flex max-w-[95vw] gap-1 overflow-x-auto rounded-full border border-white/10 bg-black/70 p-1 backdrop-blur-md">
           {MODES.map((m) => (
             <button
               key={m.id}
-              onClick={() => setMode(m.id)}
-              className={`rounded-full px-4 py-1.5 text-xs transition-colors ${
+              onClick={() => changeMode(m.id)}
+              className={`shrink-0 rounded-full px-2.5 py-1.5 text-xs transition-colors sm:px-4 ${
                 mode === m.id
                   ? "bg-indigo-500 text-white"
                   : "text-neutral-400 hover:text-neutral-200"
@@ -232,18 +326,28 @@ export default function DeepField() {
         </div>
       </div>
 
-      {/* side panel */}
-      {panelOpen && (
+      {/* Learn takes the whole window rather than a side rail — the light
+          curve and sky chart are the content here, not an aside to a 3D
+          scene. Bottom padding clears the mode tabs. */}
+      {mode === "learn" && (
         <div
-          className={`pointer-events-auto absolute right-4 top-20 flex max-w-[92vw] flex-col gap-4 overflow-y-auto ${
-            mode === "learn"
-              ? "w-[34rem] max-h-[calc(100vh-7rem)]"
-              : "w-72 max-h-[75vh]"
+          className={`absolute inset-0 z-20 overflow-y-auto overscroll-contain pb-24 pt-20 transition-[padding] ${
+            chatOpen ? "lg:pl-[22rem]" : ""
           }`}
         >
-          {mode === "learn" ? (
-            <LearnPanel onOpenChat={() => setChatOpen(true)} />
-          ) : (
+          <LearnPanel
+            tab={learnTab}
+            onTabChange={setLearnTab}
+            onOpenChat={() => setChatOpen(true)}
+            onExit={() => changeMode("stars")}
+          />
+        </div>
+      )}
+
+      {/* side panel */}
+      {panelOpen && mode !== "learn" && (
+        <div className="pointer-events-auto absolute bottom-20 right-4 top-20 z-30 flex w-72 max-w-[92vw] flex-col gap-4 overflow-y-auto overscroll-contain">
+          {(
             <>
               <ControlPanel
                 mode={mode}
@@ -302,8 +406,9 @@ export default function DeepField() {
         </div>
       )}
 
-      {/* AI guide — available in every mode, grounded in the current scene */}
-      <div className="absolute bottom-4 left-4 flex flex-col items-start gap-2">
+      {/* AI guide — available in every mode, grounded in the current scene.
+          Anchored above the mode tabs so it can never cover them. */}
+      <div className="absolute bottom-16 left-4 z-40 flex max-h-[calc(100vh-8rem)] flex-col items-start gap-2">
         {chatOpen && (
           <ChatPanel
             context={sceneContext}
@@ -312,7 +417,7 @@ export default function DeepField() {
         )}
         <button
           onClick={() => setChatOpen((v) => !v)}
-          className="rounded-full border border-white/10 bg-black/50 px-4 py-2 text-xs text-neutral-300 backdrop-blur-md hover:bg-black/70"
+          className="shrink-0 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-xs text-neutral-300 backdrop-blur-md hover:bg-black/80"
         >
           {chatOpen ? "Hide guide" : "Ask the guide"}
         </button>

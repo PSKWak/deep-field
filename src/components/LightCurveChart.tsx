@@ -4,9 +4,9 @@ import { memo, useMemo, useRef, useState } from "react";
 import type { LightCurve } from "@/lib/exoplanetData";
 import type { Detection } from "@/lib/transitDetector";
 
-const WIDTH = 560;
-const HEIGHT = 240;
-const PAD = { left: 46, right: 10, top: 12, bottom: 28 };
+const WIDTH = 900;
+const HEIGHT = 300;
+const PAD = { left: 58, right: 14, top: 16, bottom: 32 };
 
 type LightCurveChartProps = {
   curve: LightCurve;
@@ -126,19 +126,19 @@ function LightCurveChart({
             y={scale.y(f) + 3}
             textAnchor="end"
             className="fill-neutral-600"
-            style={{ fontSize: 8 }}
+            style={{ fontSize: 12 }}
           >
             {((f - 1) * 1e6).toFixed(0)}
           </text>
         </g>
       ))}
       <text
-        x={10}
+        x={14}
         y={HEIGHT / 2}
-        transform={`rotate(-90 10 ${HEIGHT / 2})`}
+        transform={`rotate(-90 14 ${HEIGHT / 2})`}
         textAnchor="middle"
         className="fill-neutral-500"
-        style={{ fontSize: 8 }}
+        style={{ fontSize: 12 }}
       >
         brightness change (ppm)
       </text>
@@ -148,20 +148,20 @@ function LightCurveChart({
         <text
           key={d}
           x={scale.x(d)}
-          y={HEIGHT - 10}
+          y={HEIGHT - 12}
           textAnchor="middle"
           className="fill-neutral-600"
-          style={{ fontSize: 8 }}
+          style={{ fontSize: 12 }}
         >
           {d}
         </text>
       ))}
       <text
         x={WIDTH - PAD.right}
-        y={HEIGHT - 1}
+        y={HEIGHT - 2}
         textAnchor="end"
         className="fill-neutral-600"
-        style={{ fontSize: 8 }}
+        style={{ fontSize: 12 }}
       >
         days
       </text>
@@ -197,7 +197,7 @@ function LightCurveChart({
 
       {/* the photometry */}
       {points.map((p, i) => (
-        <circle key={i} cx={p.cx} cy={p.cy} r={1.1} fill="rgba(226,232,240,0.75)" />
+        <circle key={i} cx={p.cx} cy={p.cy} r={1.5} fill="rgba(226,232,240,0.78)" />
       ))}
 
       {/* user guesses */}
@@ -211,7 +211,7 @@ function LightCurveChart({
             stroke="rgb(251,191,36)"
             strokeWidth={1.5}
           />
-          <circle cx={scale.x(g)} cy={PAD.top + 4} r={3} fill="rgb(251,191,36)" />
+          <circle cx={scale.x(g)} cy={PAD.top + 5} r={4} fill="rgb(251,191,36)" />
         </g>
       ))}
 

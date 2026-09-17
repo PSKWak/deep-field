@@ -27,12 +27,33 @@ type ControlPanelProps = {
   onJumpToNow: () => void;
 };
 
-function toDatetimeLocalValue(d: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
-    d.getHours()
-  )}:${pad(d.getMinutes())}`;
+const pad = (n: number) => n.toString().padStart(2, "0");
+
+function toDateValue(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+function toTimeValue(d: Date): string {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Shift the simulated date by whole years or months, keeping time of day. */
+function shift(d: Date, years: number, months: number): Date {
+  const next = new Date(d);
+  next.setFullYear(next.getFullYear() + years);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+const JUMPS: { label: string; years: number; months: number }[] = [
+  { label: "−1y", years: -1, months: 0 },
+  { label: "−1mo", years: 0, months: -1 },
+  { label: "+1mo", years: 0, months: 1 },
+  { label: "+1y", years: 1, months: 0 },
+];
+
+const dateInputClass =
+  "w-full rounded-md border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-neutral-200 [color-scheme:dark] focus:border-indigo-400 focus:outline-none";
 
 export default function ControlPanel({
   mode,
@@ -146,7 +167,7 @@ export default function ControlPanel({
 
       {mode === "planets" && (
         <div className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-xs text-neutral-300">
+          <div className="flex flex-col gap-1.5 text-xs text-neutral-300">
             <span className="flex justify-between">
               <span>Jump to date</span>
               <button
@@ -156,17 +177,47 @@ export default function ControlPanel({
                 Now
               </button>
             </span>
-            <input
-              type="datetime-local"
-              value={toDatetimeLocalValue(simDate)}
-              onChange={(e) => {
-                if (!e.target.value) return;
-                const d = new Date(e.target.value);
-                if (!Number.isNaN(d.getTime())) onSetSimDate(d);
-              }}
-              className="rounded-md border border-white/10 bg-black/40 px-2 py-1 text-xs text-neutral-200 [color-scheme:dark]"
-            />
-          </label>
+
+            {/* Separate date and time fields rather than one datetime-local:
+                the combined control puts day, month and year segments close
+                enough together that a click lands on the wrong one. */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <input
+                type="date"
+                aria-label="Simulated date"
+                value={toDateValue(simDate)}
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  const d = new Date(`${e.target.value}T${toTimeValue(simDate)}`);
+                  if (!Number.isNaN(d.getTime())) onSetSimDate(d);
+                }}
+                className={dateInputClass}
+              />
+              <input
+                type="time"
+                aria-label="Simulated time"
+                value={toTimeValue(simDate)}
+                onChange={(e) => {
+                  if (!e.target.value) return;
+                  const d = new Date(`${toDateValue(simDate)}T${e.target.value}`);
+                  if (!Number.isNaN(d.getTime())) onSetSimDate(d);
+                }}
+                className={dateInputClass}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 gap-1">
+              {JUMPS.map((j) => (
+                <button
+                  key={j.label}
+                  onClick={() => onSetSimDate(shift(simDate, j.years, j.months))}
+                  className="rounded-md bg-white/5 py-1 text-xs text-neutral-400 transition-colors hover:bg-white/10 hover:text-neutral-200"
+                >
+                  {j.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="text-xs text-neutral-500">
             Orbital motion and rotation are real; the starting alignment is
             illustrative, not precise ephemeris data.

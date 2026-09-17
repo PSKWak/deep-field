@@ -38,9 +38,17 @@ cp .env.example .env.local
 - `src/components/ExoplanetLabPanel.tsx` + `LightCurveChart.tsx` — the transit-hunting game
 - `src/components/BirthSkyPanel.tsx` + `BirthSkyCanvas.tsx` — the sky reconstruction
 - `src/components/ChatPanel.tsx` — the AI guide, available in every mode
+- `src/components/CitySearch.tsx` — city typeahead, backed by `src/lib/geocode.ts`
+- `src/components/ModeHint.tsx` — the per-mode "?" explainer
+- `src/components/ShareButton.tsx` — copies a link to the current view
+- `src/lib/shareState.ts` — encodes/decodes the view into the URL hash
 - `src/app/api/chat/route.ts` — server-side Groq proxy that keeps the key hidden
 - `src/lib/nasa.ts` — NASA API client
 - `src/lib/planets.ts` — real orbital/physical data (NASA planetary fact sheets) and time math
+
+## Sharing a view
+
+Mode, slider values, black-hole type, and the simulated date are encoded into the URL hash as you explore, so a reload or bookmark restores the same scene. **Share view** copies that link. Unknown or out-of-range values in a hand-edited link fall back to defaults rather than breaking the page.
 
 ## Learn mode
 
@@ -54,7 +62,9 @@ Photometry is PDCSAP flux from the [MAST Kepler archive](https://archive.stsci.e
 
 ### Your Sky
 
-Reconstructs the real sky for any date, time and location, and saves it as a PNG poster. Star positions come from the Yale [Bright Star Catalogue](https://vizier.cds.unistra.fr/viz-bin/cat/V/50) (576 stars to magnitude 4.1, via VizieR); the Sun, Moon and planets come from [astronomy-engine](https://github.com/cosinekitty/astronomy)'s full ephemeris. Times are resolved in the *place's* timezone with historical daylight-saving rules, not the browser's.
+"What the Universe looked like when a star like you was born" — reconstructs the real sky for any birth date, time and city, and saves it as a PNG poster. Reachable from the Learn tab or straight from Stars mode.
+
+Star positions come from the Yale [Bright Star Catalogue](https://vizier.cds.unistra.fr/viz-bin/cat/V/50) (576 stars to magnitude 4.1, via VizieR); the Sun, Moon and planets come from [astronomy-engine](https://github.com/cosinekitty/astronomy)'s full ephemeris. City lookup uses [Open-Meteo's geocoding API](https://open-meteo.com/en/docs/geocoding-api) (free, no key), which returns the IANA timezone alongside the coordinates — so times are resolved in the *place's* own zone with historical daylight-saving rules, not the browser's.
 
 The projection is azimuthal equidistant — zenith at the centre, horizon at the rim, north up and east left, as if lying on your back looking up. Star coordinates are J2000 and are not precessed, which is under half a degree of drift across a human lifetime.
 
