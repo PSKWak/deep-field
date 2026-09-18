@@ -1,6 +1,23 @@
 # Deep Field
 
-An interactive 3D explorer for stars, galaxies, planets, and black holes, built with Next.js, React Three Fiber, and Tailwind CSS. Includes live NASA Astronomy Picture of the Day data, a real-orbital-mechanics solar system, a hands-on exoplanet-hunting lab built on real Kepler photometry, and a sky reconstruction for any date and place.
+**[Open the live app →](https://deep-field-blue.vercel.app/)**
+
+An interactive 3D space explorer that runs on real astronomical data rather than decoration. Built with Next.js, React Three Fiber and Tailwind CSS.
+
+Five modes:
+
+- **Stars** and **Galaxies** — procedural fields you can tune: star count and colour temperature, spiral arm count and how tightly they wind.
+- **Planets** — the solar system with real orbital periods, rotation periods, axial tilts and moon counts from NASA fact sheets. Click a planet to fly to it; jump to any date and watch the system advance correctly. Distances and sizes are compressed to fit on screen, which the UI says plainly.
+- **Black Holes** — four real classes from stellar-mass to supermassive, with the actual Event Horizon Telescope photographs of M87\* and Sagittarius A\*, a labelled anatomy overlay that appears as you zoom in, a gravity sandbox where dropped particles orbit, spiral in or escape, and NASA's Perseus cluster sonification — real pressure waves shifted 57 octaves into hearing range.
+- **Learn** — two hands-on pieces:
+  - **Exoplanet Lab** — genuine Kepler photometry for three confirmed planets. Click where you think a planet crossed its star, then run a Box Least Squares search and see how you did against both the real transits and the algorithm. On the hardest target it recovers a 3.217-day period against 3.214 published, from data the eye can barely read.
+  - **Your Sky** — the real sky over any city on any date, from a 576-star catalogue plus full planetary ephemerides, saveable as a PNG poster.
+
+An **AI guide** is reachable from every mode and knows which scene you are looking at and where the sliders are set, so "why does the disk glow orange" gets an answer about the disk in front of you.
+
+Separately, [`ml/`](ml/) holds a Python classifier trained on 7,587 human verdicts from the Kepler Objects of Interest catalogue — the learned counterpart to the app's physics-based search.
+
+Where the visualisation is simplified or not to scale, the app says so rather than letting the picture imply otherwise.
 
 ## Getting started
 
