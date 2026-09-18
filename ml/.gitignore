@@ -1,0 +1,6 @@
+# Downloaded by fetch_data.py — regenerate rather than commit
+data/
+
+# Trained model is rebuilt by train.py; the plots are kept so the README
+# renders on GitHub
+artifacts/*.joblib

@@ -45,6 +45,7 @@ cp .env.example .env.local
 - `src/app/api/chat/route.ts` — server-side Groq proxy that keeps the key hidden
 - `src/lib/nasa.ts` — NASA API client
 - `src/lib/planets.ts` — real orbital/physical data (NASA planetary fact sheets) and time math
+- `ml/` — Python: the trained planet/false-positive classifier (not part of the web app)
 
 ## Sharing a view
 
@@ -57,6 +58,8 @@ Mode, slider values, black-hole type, and the simulated date are encoded into th
 Real Kepler long-cadence photometry for three confirmed planets, sliced to a 12-day window: **Kepler-1 b** (a 1.4% transit — unmissable), **Kepler-2 b** (0.67%), and **Kepler-4 b** (0.073%, only ~10× the noise). You click where you think a planet crossed its star, then run a simplified [Box Least Squares](https://en.wikipedia.org/wiki/Box_least_squares) search — the same family of algorithm the Kepler and TESS pipelines use — and compare your guesses against both the real transits and the algorithm's.
 
 The detector is deliberately not a neural network. It folds the light curve at every candidate period, duration and phase, and scores each by signal-to-noise; on Kepler-4 b it recovers a 3.217-day period against a published 3.214 days, from data the eye can barely read. The accompanying explainer covers where learned models *do* come in — NASA's CNN classifiers for vetting candidates, and the two planets AstroNet recovered that the pipeline had discarded.
+
+That learned half is implemented in Python under [`ml/`](ml/) — a classifier trained on 7,587 human verdicts from the Kepler Objects of Interest catalogue, which separates real planets from false positives at 0.978 ROC-AUC. See [ml/README.md](ml/README.md); it also demonstrates label leakage, since the KOI table ships four columns that encode the answer.
 
 Photometry is PDCSAP flux from the [MAST Kepler archive](https://archive.stsci.edu/missions/kepler/lightcurves/), normalized with a 2nd-order polynomial fit to the out-of-transit points to remove instrumental drift; the transits themselves are untouched. Transit parameters come from the [NASA Exoplanet Archive](https://exoplanetarchive.ipac.caltech.edu/) KOI cumulative table.
 
